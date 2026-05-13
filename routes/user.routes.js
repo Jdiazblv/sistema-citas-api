@@ -1,3 +1,5 @@
+// RUTAS - ACCIONES DEL CRUD (Create, read, update, delete)
+
 // Importar express
 const express = require('express');
 
@@ -5,12 +7,13 @@ const express = require('express');
 const router = express.Router();
 
 // Importar modelo de usuario
-const ModelUser = require("../modes");
-
+const ModelUser = require("../models/user.model");
 
 // CRUD
 
-// CREATE -> POST
+
+    // CREATE -> POST
+
 // Crear usuario
 router.post("/users", async (req, res) => {
 
@@ -48,7 +51,7 @@ router.post("/users/register", async (req, res) => {
 
     } catch (error) {
         res.status(500).send({
-            mensajes: "Error al registrar usuario"
+            mensaje: "Error al registrar usuario"
         });
     }
 });
@@ -83,7 +86,9 @@ router.post("/users/login", async (req, res) => {
     }
 });
 
-// READ -> GET
+
+    // READ -> GET
+
 // Obtener usuarios
 router.get("/users", async (req, res) => {
 
@@ -107,7 +112,9 @@ router.get("/users/:id", async (req, res) => {
     }
 });
 
-// UPDATE -> PUT
+
+    // UPDATE -> PUT
+
 // Actualizar usuario
 router.put("/users/:id", async (req, res) => {
     try {
@@ -123,7 +130,9 @@ router.put("/users/:id", async (req, res) => {
     }
 });
 
-// DELETE -> DELETE
+
+    // DELETE -> DELETE
+
 // Eliminar usuario
 router.delete("/users/:id", async (req, res) => {
     try {
@@ -135,6 +144,7 @@ router.delete("/users/:id", async (req, res) => {
     }
 });
 
+// Exportar la ruta
 module.exports = router;
 
 /* 
@@ -162,4 +172,12 @@ module.exports = router;
 404 ->      No encontrado
 500 ->      Error servidor
 
+Actualizar
+- try:        
+    const usuarioActualizado: guardar el resultado
+    await: espera a que mongo termine
+    findByIdAndUpdate: busca por id, actualiza, devuelbe el resultado
+    req.params.id: obtiene el id desde el url
+    req.body: son los nuevos datos enviados
+    { new: true }: hace que mongo devuelba el nuevo documento actualizado
 */

@@ -8,9 +8,13 @@ app.use(express.json());
 
 // Importar rutas
 const userRoutes = require("./routes/user.routes");
+const pacienteRoutes = require("./routes/paciente.routes");
+const citaRoutes = require("./routes/citas.routes");
 
 // Usar rutas
 app.use(userRoutes);
+app.use(pacienteRoutes);
+app.use(citaRoutes);
 
 // Ruta principal
 app.get("/", (req, res) => {

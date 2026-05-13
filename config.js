@@ -16,5 +16,5 @@ const dbconnect = async () => {
     );
 }
 
-// Exportar
+// Exportar el modelo
 module.exports = dbconnect;
