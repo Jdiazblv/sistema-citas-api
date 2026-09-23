@@ -1,55 +1,20 @@
-// MODELO QUE DEFINE LA ESTRUCTURA (nombres, cedula, telefono, correo)
+// MODELO QUE DEFINE LA ESTRUCTURA DE LOS DATOS EXCLUSIVOS DEL PACIENTE
 
-// Importar libreria mongoose para conectar Node.js con MongoDB
+// Importar librería mongoose para conectar Node.js con MongoDB
 const mongoose = require('mongoose');
-const ModelUser = require('./user.model');
 
 // Creando esquema (estructura)
 const pacienteModel = mongoose.Schema({
 
-    rol: {
-        type: String,
-        enum: ["Administrador", "Paciente", "Medico"],
-        default: "Paciente"
-    },
-
-    nombres: {
-        type: String,
-        required: true
-    },
-    
-    apellidos: {
-        type: String,
-        required: true
-    },
-
-    tipoDocumento: {
-        type: String,
-        required: true
-    },
-
-    documento: {
-        type: String,
+    // Relación con el usuario que tiene las credenciales y datos generales
+    usuarioId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'usuarios',
         required: true,
         unique: true
     },
 
-    correo: {
-        type: String,
-        required: true,
-        unique: true
-    },
-
-    telefono: {
-        type: String,
-        required: true
-    },
-
-    fechaNacimiento: {
-        type: String,
-        required: true
-    },
-
+    // Datos exclusivos del paciente
     sexo: {
         type: String,
         required: true
@@ -61,11 +26,6 @@ const pacienteModel = mongoose.Schema({
     },
 
     direccion: {
-        type: String,
-        required: true
-    },
-
-    password: {
         type: String,
         required: true
     }

@@ -1,100 +1,31 @@
-// MODELO QUE DEFINE LA ESTRUCTURA (nombres, cedula, telefono, correo)
+// MODELO QUE DEFINE LA ESTRUCTURA DE LOS DATOS EXCLUSIVOS DEL MÉDICO
 
-// Importar libreria mongoose para conectar Node.js con MongoDB
+// Importar librería mongoose para conectar Node.js con MongoDB
 const mongoose = require('mongoose');
 
 // Creando esquema (estructura)
 const medicoModel = mongoose.Schema({
 
-    rol: {
-        type: String,
+    // Relación con el usuario que tiene las credenciales y datos generales
+    usuarioId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'usuarios',
         required: true,
-        enum: [
-            "Administrador",
-            "Paciente",
-            "Medico"
-        ]
+        unique: true
     },
 
+    // Especialidades que maneja el médico
     especialidades: {
         type: [String],
         required: true,
         default: []
     },
 
+    // Registro profesional del médico
     registroProfesional: {
         type: String,
         required: true,
         unique: true
-    },
-
-    nombres: {
-        type: String,
-        required: true
-    },
-    
-    apellidos: {
-        type: String,
-        required: true
-    },
-
-    tipoDocumento: {
-        type: String,
-        required: true,
-        enum: [
-            "Cedula de Ciudadania",
-            "Cedula de Extranjeria",
-            "Tarjeta de Identidad",
-            "Registro Civil",
-            "Pasaporte"
-        ]
-    },
-
-    documento: {
-        type: String,
-        required: true,
-        unique: true
-    },
-
-    correo: {
-        type: String,
-        required: true,
-        unique: true
-    },
-
-    telefono: {
-        type: String,
-        required: true
-    },
-
-    fechaNacimiento: {
-        type: String,
-        required: true
-    },
-
-    sexo: {
-        type: String,
-        required: true,
-        enum: [
-            "Masculino",
-            "Femenino",
-            "Otro"
-        ]
-    },
-
-    direccion: {
-        type: String,
-        required: true
-    },
-
-    password: {
-        type: String,
-        required: true
-    },
-
-    activo: {
-        type: Boolean,
-        default: true
     }
 
 },
@@ -104,7 +35,7 @@ const medicoModel = mongoose.Schema({
 }
 );
 
-// rear una colección llamada medicos usando la estructura medicoModel
+// Crear una colección llamada medicos usando la estructura medicoModel
 const ModelMedico = mongoose.model('medicos', medicoModel);
 
 // Exportar el modelo

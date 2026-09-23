@@ -15,12 +15,14 @@ const userRoutes = require("./routes/user.routes");
 const pacienteRoutes = require("./routes/paciente.routes");
 const citaRoutes = require("./routes/citas.routes");
 const medicoRoutes = require("./routes/medico.routes");
+const historiaClinicaRoutes = require("./routes/historiaClinica.routes");
 
 // Usar rutas
 app.use("/api/", userRoutes);
 app.use("/api/", pacienteRoutes);
 app.use("/api/", citaRoutes);
 app.use("/api/", medicoRoutes);
+app.use("/api/", historiaClinicaRoutes);
 
 // Ruta principal
 app.get("/", (req, res) => {

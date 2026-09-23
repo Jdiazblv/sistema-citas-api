@@ -1,41 +1,89 @@
-// MODELO QUE DEFINE LA ESTRUCTURA (nomUser, passUser)
+// MODELO DE USUARIO
+// Define la información general de todas las personas que pueden acceder al sistema.
 
-// Importar libreria mongoose para conectar Node.js con MongoDB
+// Importar mongoose
 const mongoose = require('mongoose');
 
-// Creando esquema (estructura)
+// Crear esquema
 const userModel = mongoose.Schema({
 
-    nomUser: {              // Nombre del campo
-        type: String,       // Sera texto
-        required: true      // Es de requerimiento (obligatorio)
+    // Nombres del usuario
+    nombres: {
+        type: String,
+        required: true
     },
 
-    passUser: {             // Nombre del campo
-        type: String,       // Sera texto
-        required: true      // Es de requerimiento (obligatorio)
+    // Apellidos del usuario
+    apellidos: {
+        type: String,
+        required: true
+    },
+
+    // Tipo de documento
+    tipoDocumento: {
+        type: String,
+        required: true
+    },
+
+    // Número de documento
+    documento: {
+        type: String,
+        required: true,
+        unique: true
+    },
+
+    // Correo electrónico
+    correo: {
+        type: String,
+        required: true,
+        unique: true
+    },
+
+    // Teléfono
+    telefono: {
+        type: String,
+        required: true
+    },
+
+    // Fecha de nacimiento
+    fechaNacimiento: {
+        type: String,
+        required: true
+    },
+
+    // Rol dentro del sistema
+    rol: {
+        type: String,
+        required: true,
+        enum: [
+            "Administrador",
+            "Recepcionista",
+            "Medico",
+            "Paciente"
+        ]
+    },
+
+    // Contraseña
+    password: {
+        type: String,
+        required: true,
+        select: false
+    },
+
+    // Permite activar o desactivar el acceso del usuario
+    activo: {
+        type: Boolean,
+        default: true
     }
+
 },
 {
     timestamps: true,
-    versionKey: false,
-}
-);
+    versionKey: false
+});
 
-// Crear una colección llamada usuarios usando la estructura userModel
+// Crear colección usuarios
 const ModelUser = mongoose.model('usuarios', userModel);
 
-// Exportar el modelo
+// Exportar modelo
 module.exports = ModelUser;
-
-/*
-timestamps: true,
-    Hace que mongoose agrege fechas
-        - "createdAt": "Fecha"
-        - "updatedAt": "Fecha":
-        Es la fecha de la ultima actualizacion
-        Para editar el "createdAt" con "updatedAt" en JSON
-    
-versionKey: false,
-    Elimina el campo "__v": 0 que mongoose agrega automaticamente
-*/

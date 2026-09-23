@@ -1,40 +1,55 @@
-// MODELO QUE DEFINE LA ESTRUCTURA (pacienteId, fecha, hora, doctor, especialidad, estado)
+// MODELO QUE DEFINE LA ESTRUCTURA DE LAS CITAS MÉDICAS
 
-// Importar libreria mongoose para conectar Node.js con MongoDB
+// Importar librería mongoose para conectar Node.js con MongoDB
 const mongoose = require('mongoose');
 
 // Creando esquema (estructura)
-const citaModel = mongoose.Schema ({
+const citaModel = mongoose.Schema({
 
+    // Paciente que tiene la cita
     pacienteId: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'pacientes',
         required: true
     },
 
+    // Médico encargado de la cita
+    medicoId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'medicos',
+        required: true
+    },
+
+    // Fecha de la cita
     fecha: {
         type: String,
         required: true
     },
 
+    // Hora de la cita
     hora: {
         type: String,
         required: true
     },
 
-    doctor: {
+    // Motivo de la consulta
+    motivo: {
         type: String,
         required: true
     },
 
-    especialidad: {
-        type: String,
-        required: true
-    },
-
+    // Estado actual de la cita
     estado: {
         type: String,
-        required: true
-    },
+        enum: [
+            "Pendiente",
+            "Confirmada",
+            "Atendida",
+            "Cancelada"
+        ],
+        default: "Pendiente"
+    }
+
 },
 {
     timestamps: true,
