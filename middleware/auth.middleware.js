@@ -2,7 +2,7 @@
 const jwt = require('jsonwebtoken');
 
 // Clave secreta para JWT
-const JWT_SECRET = "clave_secreta_sistema_citas";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Middleware para verificar el token
 const verificarToken = (req, res, next) => {

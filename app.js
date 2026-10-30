@@ -1,3 +1,10 @@
+// app.js
+
+
+// Cargar variables de entorno
+require("dotenv").config();
+
+// Importar dependencias
 const express = require("express");
 const cors = require("cors");
 const dbconnect = require("./config");

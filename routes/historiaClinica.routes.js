@@ -192,37 +192,54 @@ router.put(
     verificarRol("Medico"),
     async (req, res) => {
 
-    try {
+        try {
 
-        const historiaActualizada = await ModelHistoriaClinica.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
+            const historia = await ModelHistoriaClinica
+                .findById(req.params.id)
+                .populate({
+                    path: 'medicoId',
+                    populate: {
+                        path: 'usuarioId'
+                    }
+                });
+
+            if (!historia) {
+                return res.status(404).send({
+                    mensaje: "Historia clínica no encontrada"
+                });
             }
-        );
 
-        if (!historiaActualizada) {
+            // El médico solo puede modificar sus propias historias
+            if (
+                historia.medicoId.usuarioId._id.toString() !== req.usuario.id
+            ) {
+                return res.status(403).send({
+                    mensaje: "No tienes permiso para modificar esta historia clínica"
+                });
+            }
 
-            return res.status(404).send({
-                mensaje: "Historia clínica no encontrada"
+            const historiaActualizada = await ModelHistoriaClinica.findByIdAndUpdate(
+                req.params.id,
+                req.body,
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            res.send(historiaActualizada);
+
+        } catch (error) {
+
+            res.status(500).send({
+                mensaje: "Error al actualizar historia clínica",
+                error: error.message
             });
 
         }
 
-        res.send(historiaActualizada);
-
-    } catch (error) {
-
-        res.status(500).send({
-            mensaje: "Error al actualizar historia clínica",
-            error: error.message
-        });
-
     }
-
-});
+);
 
 
 // ==============================

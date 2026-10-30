@@ -25,7 +25,7 @@ const router = express.Router();
 
 
 // Clave secreta para JWT
-const JWT_SECRET = "clave_secreta_sistema_citas";
+const JWT_SECRET = process.env.JWT_SECRET;
 
 
 // ==============================
@@ -33,34 +33,131 @@ const JWT_SECRET = "clave_secreta_sistema_citas";
 // ==============================
 
 // Crear usuario
-router.post("/users", async (req, res) => {
+router.post(
+    "/users",
+    verificarToken,
+    verificarRol("Administrador"),
+    async (req, res) => {
 
-    try {
 
-        // Encriptar la contraseña
-        const passwordEncriptada = await bcrypt.hash(req.body.password, 10);
+        // Validar campos obligatorios y formato de correo
+        try {
 
-        // Crear usuario con la contraseña encriptada
-        const nuevoUsuario = new ModelUser({
-            ...req.body,
-            password: passwordEncriptada
-        });
+            // Desestructurar los campos del cuerpo de la solicitud
+            const {
+                nombres,
+                apellidos,
+                tipoDocumento,
+                documento,
+                correo,
+                telefono,
+                fechaNacimiento,
+                rol,
+                password
+            } = req.body;
 
-        // Guardar usuario
-        const respuesta = await nuevoUsuario.save();
+            // Validar campos obligatorios
+            if (
+                !nombres?.trim() ||
+                !apellidos?.trim() ||
+                !tipoDocumento?.trim() ||
+                !documento?.trim() ||
+                !correo?.trim() ||
+                !telefono?.trim() ||
+                !fechaNacimiento?.trim() ||
+                !rol ||
+                !password
+            ) {
+                return res.status(400).send({
+                    mensaje: "Todos los campos son obligatorios."
+                });
+            }
 
-        res.status(201).send(respuesta);
+            // Validar el formato básico del documento
+            if (!/^\d+$/.test(documento.trim())) {
+                return res.status(400).send({
+                    mensaje: "El documento debe contener solo números."
+                });
+            }
 
-    } catch (error) {
+            // Validar el formato básico del correo
+            if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo.trim())) {
+                return res.status(400).send({
+                    mensaje: "Ingresa un correo electrónico válido."
+                });
+            }
 
-        res.status(500).send({
-            mensaje: "Error al crear usuario",
-            error: error.message
-        });
+            // Validar el rol permitido
+            const rolesPermitidos = [
+                "Administrador",
+                "Recepcionista",
+                "Medico",
+                "Paciente"
+            ];
 
+            if (!rolesPermitidos.includes(rol)) {
+                return res.status(400).send({
+                    mensaje: "El rol seleccionado no es válido."
+                });
+            }
+
+            // Encriptar la contraseña
+            const passwordEncriptada = await bcrypt.hash(password, 10);
+
+            // Crear un nuevo usuario con los datos proporcionados
+            const nuevoUsuario = new ModelUser({
+                nombres: nombres.trim(),
+                apellidos: apellidos.trim(),
+                tipoDocumento: tipoDocumento.trim(),
+                documento: documento.trim(),
+                correo: correo.trim().toLowerCase(),
+                telefono: telefono.trim(),
+                fechaNacimiento: fechaNacimiento.trim(),
+                rol,
+                password: passwordEncriptada
+            });
+
+            const usuarioGuardado = await nuevoUsuario.save();
+
+            const usuarioRespuesta = usuarioGuardado.toObject();
+            delete usuarioRespuesta.password;
+
+            res.status(201).send({
+                mensaje: "Usuario creado correctamente",
+                usuario: usuarioRespuesta
+            });
+
+        } catch (error) {
+
+            // Manejar errores de clave duplicada (documento o correo)
+            if (error.code === 11000) {
+                if (error.keyPattern?.documento) {
+                    return res.status(409).send({
+                    mensaje: "Ya existe un usuario con ese documento."
+                    });
+                }
+
+                if (error.keyPattern?.correo) {
+                    return res.status(409).send({
+                    mensaje: "Ya existe un usuario con ese correo electrónico."
+                    });
+                }
+
+                return res.status(409).send({
+                    mensaje: "Ya existe un usuario con esos datos."
+                });
+            }
+
+
+            // Manejar errores de validación de Mongoose
+            console.error("Error al crear usuario:", error);
+
+            res.status(500).send({
+                mensaje: "No fue posible crear el usuario."
+            });
+        }
     }
-
-});
+);
 
 // ==============================
 // LOGIN -> POST
@@ -81,6 +178,13 @@ router.post("/login", async (req, res) => {
         if (!usuario) {
             return res.status(401).send({
                 mensaje: "Documento o contraseña incorrectos"
+            });
+        }
+
+        // Verificar si el usuario está activo
+        if (!usuario.activo) {
+            return res.status(403).send({
+                mensaje: "Esta cuenta está desactivada. Contacta al administrador."
             });
         }
 
@@ -124,10 +228,12 @@ router.post("/login", async (req, res) => {
         });                         
 
     } catch (error) {
+        
+        console.error("Error interno al iniciar sesión.", error);
 
         res.status(500).send({
-            mensaje: "Error al iniciar sesión",
-            error: error.message
+        mensaje: "No fue posible iniciar sesión",
+
         });
 
     }
@@ -144,15 +250,16 @@ router.get("/users", verificarToken, verificarRol("Administrador"), async (req, 
 
     try {
 
-        const usuarios = await ModelUser.find();
+        const usuarios = await ModelUser.find().select("-password");
 
         res.send(usuarios);
 
     } catch (error) {
 
+        console.error("Error al obtener usuarios:", error);
+
         res.status(500).send({
-            mensaje: "Error al obtener usuarios",
-            error: error.message
+            mensaje: "No fue posible obtener los usuarios.",
         });
 
     }
@@ -161,68 +268,131 @@ router.get("/users", verificarToken, verificarRol("Administrador"), async (req, 
 
 
 // Obtener usuario por ID
-router.get("/users/:id", async (req, res) => {
+router.get(
+    "/users/:id",
+    verificarToken,
+    async (req, res) => {
+        try {
+            // Solo el administrador puede consultar otros usuarios
+            if (
+                req.usuario.rol !== "Administrador" &&
+                req.usuario.id !== req.params.id
+            ) {
+                return res.status(403).send({
+                    mensaje: "No tienes permiso para consultar este usuario"
+                });
+            }
 
-    try {
+            const usuario = await ModelUser.findById(req.params.id).select("-password");
 
-        const usuario = await ModelUser.findById(req.params.id);
+            if (!usuario) {
+                return res.status(404).send({
+                    mensaje: "Usuario no encontrado"
+                });
+            }
 
-        if (!usuario) {
-            return res.status(404).send({
-                mensaje: "Usuario no encontrado"
+            res.send(usuario);
+
+        } catch (error) {
+
+            console.error("Error al obtener usuario:", error);
+
+            res.status(500).send({
+                mensaje: "No fue posible obtener al usuario",
             });
         }
-
-        res.send(usuario);
-
-    } catch (error) {
-
-        res.status(500).send({
-            mensaje: "Error al obtener usuario",
-            error: error.message
-        });
-
     }
-
-});
-
+);
 
 // ==============================
 // UPDATE -> PUT
 // ==============================
 
 // Actualizar usuario
-router.put("/users/:id", async (req, res) => {
+router.put(
+    "/users/:id",
+    verificarToken,
+    verificarRol("Administrador"),
+    async (req, res) => {
+        
+        try {
 
-    try {
+            const datosActualizados = { ...req.body };
 
-        const usuarioActualizado = await ModelUser.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            {
-                new: true,
-                runValidators: true
+            // No permitir modificar el identificador
+            delete datosActualizados._id;
+
+            // Encriptar la contraseña si se proporciona una nueva
+            if (datosActualizados.password !== undefined) {
+                if (!datosActualizados.password) {
+                    return res.status(400).send({
+                        mensaje: "La contraseña no puede estar vacía"
+                    });
+                }
+
+                datosActualizados.password = await bcrypt.hash(
+                    datosActualizados.password,
+                    10
+                );
             }
-        );
 
-        if (!usuarioActualizado) {
-            return res.status(404).send({
-                mensaje: "Usuario no encontrado"
+            const usuarioActualizado = await ModelUser.findByIdAndUpdate(
+                req.params.id,
+                datosActualizados,
+                {
+                    new: true,
+                    runValidators: true
+                }
+            );
+
+            if (!usuarioActualizado) {
+                return res.status(404).send({
+                    mensaje: "Usuario no encontrado"
+                });
+            }
+
+            // Eliminar la contraseña del objeto de respuesta
+            const usuarioRespuesta = usuarioActualizado.toObject();
+            delete usuarioRespuesta.password;
+
+            // Responder con el usuario actualizado
+            res.send({
+                mensaje: "Usuario actualizado correctamente",
+                usuario: usuarioRespuesta
+            });
+
+        
+        } catch (error) {
+
+            // Manejar errores de documento o correo duplicado
+            if (error.code === 11000) {
+
+                if (error.keyPattern?.documento) {
+                    return res.status(409).send({
+                        mensaje: "Ya existe otro usuario con ese documento."
+                    });
+                }
+
+                if (error.keyPattern?.correo) {
+                    return res.status(409).send({
+                        mensaje: "Ya existe otro usuario con ese correo electrónico."
+                    });
+                }
+
+                return res.status(409).send({
+                    mensaje: "Ya existe otro usuario con esos datos."
+                });
+            }
+
+            console.error("Error al actualizar usuario:", error);
+
+            res.status(500).send({
+                mensaje: "No fue posible actualizar al usuario"
             });
         }
 
-        res.send(usuarioActualizado);
-
-    } catch (error) {
-
-        res.status(500).send({
-            mensaje: "Error al actualizar usuario",
-            error: error.message
-        });
-
     }
-
-});
+);
 
 
 // ==============================
@@ -230,35 +400,36 @@ router.put("/users/:id", async (req, res) => {
 // ==============================
 
 // Eliminar usuario
-router.delete("/users/:id", async (req, res) => {
+router.delete(
+    "/users/:id",
+    verificarToken,
+    verificarRol("Administrador"),
+    async (req, res) => {
+        try {
+            const usuarioEliminado = await ModelUser.findByIdAndDelete(
+                req.params.id
+            );
 
-    try {
+            if (!usuarioEliminado) {
+                return res.status(404).send({
+                    mensaje: "Usuario no encontrado"
+                });
+            }
 
-        const usuarioEliminado = await ModelUser.findByIdAndDelete(
-            req.params.id
-        );
+            res.send({
+                mensaje: "Usuario eliminado correctamente"
+            });
 
-        if (!usuarioEliminado) {
-            return res.status(404).send({
-                mensaje: "Usuario no encontrado"
+        } catch (error) {
+
+            console.error("Error al eliminar usuario:", error);
+
+            res.status(500).send({
+                mensaje: "No fue posible eliminar al usuario",
             });
         }
-
-        res.send({
-            mensaje: "Usuario eliminado correctamente",
-            usuario: usuarioEliminado
-        });
-
-    } catch (error) {
-
-        res.status(500).send({
-            mensaje: "Error al eliminar usuario",
-            error: error.message
-        });
-
     }
-
-});
+);
 
 // Exportar la ruta
 module.exports = router;

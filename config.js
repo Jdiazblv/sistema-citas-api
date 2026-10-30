@@ -7,10 +7,9 @@ const dbconnect = async () => {
     mongoose.set('strictQuery', true);
 
     // Conexion a la base de datos
-    await mongoose.connect(
-        'mongodb+srv://jdiazblv:Papito123@cluster0.t67o6c0.mongodb.net/sistemacitas?retryWrites=true&w=majority&appName=Cluster0'
-    );
+    await mongoose.connect(process.env.MONGODB_URI);
 
+    // Mensaje de conexion exitosa
     console.log('✅ Conexion a la base de datos establecida');
 }
 
